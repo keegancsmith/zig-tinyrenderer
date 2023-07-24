@@ -1,5 +1,20 @@
 const std = @import("std");
 
+const TGAHeader = packed struct {
+    idlength: u8,
+    colormaptype: u8,
+    datatypecode: u8,
+    colormaporigin: u16,
+    colormaplength: u16,
+    colormapdepth: u8,
+    x_origin: u16,
+    y_origin: u16,
+    width: u16,
+    height: u16,
+    bitsperpixel: u8,
+    imagedescriptor: u8,
+};
+
 const TGAColor = struct {
     r: u8 = 0,
     g: u8 = 0,
@@ -36,10 +51,37 @@ const TGAImage = struct {
         );
         defer file.close();
         var bw = std.io.bufferedWriter(file.writer());
+
+        const header = TGAHeader{
+            .bitsperpixel = 4 << 3,
+            .width = @as(u16, @intCast(self.width)),
+            .height = @as(u16, @intCast(self.data.len / self.width)),
+            .datatypecode = 2, // rle=false && RGB
+            .imagedescriptor = 20, // top-left origin
+
+            // unset
+            .idlength = 0,
+            .colormaptype = 0,
+            .colormaporigin = 0,
+            .colormaplength = 0,
+            .colormapdepth = 0,
+            .x_origin = 0,
+            .y_origin = 0,
+        };
+        _ = try bw.write(std.mem.asBytes(&header));
+
         for (self.data) |pixel| {
-            const bytes = [_]u8{ pixel.r, pixel.g, pixel.b, pixel.a };
+            const bytes = [_]u8{ pixel.b, pixel.g, pixel.r, pixel.a };
             _ = try bw.write(bytes[0..]);
         }
+
+        const developer_area_ref = [_]u8{ 0, 0, 0, 0 };
+        _ = try bw.write(developer_area_ref[0..]);
+        const extension_area_ref = [_]u8{ 0, 0, 0, 0 };
+        _ = try bw.write(extension_area_ref[0..]);
+        const footer = "TRUEVISION-XFILE.\x00";
+        _ = try bw.write(footer[0..]);
+
         try bw.flush();
     }
 };

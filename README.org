@@ -34,3 +34,17 @@ the code and try and use things like memmove/memcopy in places.
 
 After an hour I had something which wrote out stuff to disk, but was not the
 TGA file format. Next time I will try make the file correct.
+
+*** 2023-07-24 Monday
+
+**** Buggy TGA writer [2023-07-24 Mon 21:55]
+
+Only had 30min tonight, but have a rendering TGA file which looks buggy as
+hell. Tomorrow I will have to compare hexdump output of this TGA writer vs the
+reference one.
+
+It was quite amazing though, I pasted in the TGAHeader struct from C++ into
+Cody to translate and it did a great job, including =packed struct= to match
+the pragma used in the C++ code! I think I could of pasted in all the code and
+it would of done a decent job, but then I refrained since I wouldn't learn as
+much that way.
