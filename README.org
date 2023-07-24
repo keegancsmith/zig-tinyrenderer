@@ -1,0 +1,36 @@
+#+TITLE: zig-tinyrenderer
+
+Goal is to slowly implement https://github.com/ssloy/tinyrenderer in zig for
+learning purposes.
+
+* 2023
+** 2023-07 July
+*** 2023-07-23 Sunday
+
+**** Port TGA code [2023-07-23 Sun 20:53]
+     :LOGBOOK:
+     CLOCK: [2023-07-23 Sun 20:53]--[2023-07-23 Sun 21:55] =>  1:02
+     :END:
+
+https://github.com/ssloy/tinyrenderer/wiki/Lesson-0:-getting-started
+https://github.com/ssloy/tinyrenderer/tree/909fe20934ba5334144d2c748805690a1fa4c89f
+
+First goal is to port the TGA code, just enough to generate the example image
+with the red dot. I could vendor this in and directly call the C++ code from
+zig, but likely a better goal for learning zig to port.
+
+I first start off by copying a flake.nix I had from an earlier project which
+provides the latest zig. I then just ran =zig init-exe= and started hacking.
+
+Interesting things are that =const= means that all bytes related to that
+variable are immutable. This is unlike other languages and actually makes a
+lot of sense. So I had to use var on the array I created for the TGA file. I
+used Cody to work this out, I am starting to see the value of AI tools.
+
+I spent a long time before this jumping back and forth between the zig learn
+site, zig std library code and my editor. I think I am gonna experiment with
+AI tools to help me write correct code. Additionally I need to go back over
+the code and try and use things like memmove/memcopy in places.
+
+After an hour I had something which wrote out stuff to disk, but was not the
+TGA file format. Next time I will try make the file correct.
