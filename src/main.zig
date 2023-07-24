@@ -35,7 +35,7 @@ const TGAImage = struct {
             .{ .read = true },
         );
         defer file.close();
-        var bw = std.io.bufferedWriter(std.fs.File.writer(file));
+        var bw = std.io.bufferedWriter(file.writer());
         for (self.data) |pixel| {
             const bytes = [_]u8{ pixel.r, pixel.g, pixel.b, pixel.a };
             _ = try bw.write(bytes[0..]);
