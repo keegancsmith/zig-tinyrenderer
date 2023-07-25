@@ -19,7 +19,6 @@ const TGAColor = struct {
     r: u8 = 0,
     g: u8 = 0,
     b: u8 = 0,
-    a: u8 = 255,
 };
 
 const TGAImage = struct {
@@ -53,11 +52,11 @@ const TGAImage = struct {
         var bw = std.io.bufferedWriter(file.writer());
 
         const header = TGAHeader{
-            .bitsperpixel = 4 << 3,
+            .bitsperpixel = 3 << 3,
             .width = @as(u16, @intCast(self.width)),
             .height = @as(u16, @intCast(self.data.len / self.width)),
             .datatypecode = 2, // rle=false && RGB
-            .imagedescriptor = 20, // top-left origin
+            .imagedescriptor = 0x20, // top-left origin
 
             // unset
             .idlength = 0,
@@ -71,7 +70,7 @@ const TGAImage = struct {
         _ = try bw.write(std.mem.asBytes(&header));
 
         for (self.data) |pixel| {
-            const bytes = [_]u8{ pixel.b, pixel.g, pixel.r, pixel.a };
+            const bytes = [_]u8{ pixel.r, pixel.g, pixel.b };
             _ = try bw.write(bytes[0..]);
         }
 
@@ -87,7 +86,7 @@ const TGAImage = struct {
 };
 
 pub fn main() !void {
-    var data: [100 * 100]TGAColor = undefined;
+    var data = [_]TGAColor{.{}} ** (100 * 100);
     var image = TGAImage{
         .data = data[0..],
         .width = 100,
