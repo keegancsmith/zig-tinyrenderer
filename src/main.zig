@@ -26,7 +26,7 @@ const TGAImage = struct {
     width: usize,
 
     fn set(self: *TGAImage, x: u32, y: u32, color: TGAColor) void {
-        self.data[(x * self.width) + y] = color;
+        self.data[(y * self.width) + x] = color;
     }
 
     fn flip_vertically(self: *TGAImage) void {
