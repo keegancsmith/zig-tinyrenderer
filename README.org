@@ -66,3 +66,18 @@ was writing down the imagedescriptor as the value 20 instead 0x20.
 
 Had a very short night (just 15min), so this was as far as I got. There is
 still some discrepencies to dive into, hopefully my next session is longer.
+
+** 2023-08 August
+*** 2023-08-01 Tuesday
+
+**** bresenham's line drawing algorithm first attempt [2023-08-01 Tue 21:39]
+     :LOGBOOK:
+     CLOCK: [2023-08-01 Tue 21:39]--[2023-08-01 Tue 21:59] =>  0:20
+     :END:
+
+https://github.com/ssloy/tinyrenderer/wiki/Lesson-1:-Bresenham%E2%80%99s-Line-Drawing-Algorithm
+
+Only had a few minutes to hack, but did the first attempt. Zig seems a lot
+more explicit at casting between ints and floats, so the code was a bit
+verbose. Tried a bit to use cody to help with how to cast, but it generated
+slightly incorrect names.
