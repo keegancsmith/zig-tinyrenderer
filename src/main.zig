@@ -86,27 +86,31 @@ const TGAImage = struct {
 };
 
 fn line(x0: u32, y0: u32, x1: u32, y1: u32, image: *TGAImage, color: TGAColor) void {
-    var t: f32 = 0;
-
     const fx0: f32 = @floatFromInt(x0);
     const fx1: f32 = @floatFromInt(x1);
     const fy0: f32 = @floatFromInt(y0);
     const fy1: f32 = @floatFromInt(y1);
 
-    while (t < 1) : (t += 0.1) {
-        const x: u32 = @intFromFloat(fx0 * (1 - t) + fx1 * t);
+    var x: f32 = fx0;
+    while (x <= fx1) : (x += 1) {
+        const t: f32 = (x - fx0) / (fx1 - fx0);
         const y: u32 = @intFromFloat(fy0 * (1 - t) + fy1 * t);
-        image.set(x, y, color);
+        image.set(@as(u32, @intFromFloat(x)), y, color);
     }
 }
 
 pub fn main() !void {
+    const white = TGAColor{ .r = 255, .g = 255, .b = 255 };
+    const red = TGAColor{ .r = 255 };
+
     var data = [_]TGAColor{.{}} ** (100 * 100);
     var image = TGAImage{
         .data = data[0..],
         .width = 100,
     };
-    line(13, 20, 80, 40, &image, TGAColor{ .r = 255, .g = 255, .b = 255 });
+    line(13, 20, 80, 40, &image, white);
+    line(20, 13, 40, 80, &image, red);
+    line(80, 40, 13, 20, &image, red);
     image.flip_vertically();
     try image.write_tga_file("output.tga");
 }
