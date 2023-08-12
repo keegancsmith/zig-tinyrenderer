@@ -85,17 +85,42 @@ const TGAImage = struct {
     }
 };
 
+fn dist(comptime T: type, x0: T, x1: T) T {
+    if (x0 < x1) {
+        return x1 - x0;
+    } else {
+        return x0 - x1;
+    }
+}
+
 fn line(x0: u32, y0: u32, x1: u32, y1: u32, image: *TGAImage, color: TGAColor) void {
-    const fx0: f32 = @floatFromInt(x0);
-    const fx1: f32 = @floatFromInt(x1);
-    const fy0: f32 = @floatFromInt(y0);
-    const fy1: f32 = @floatFromInt(y1);
+    var fx0: f32 = @floatFromInt(x0);
+    var fx1: f32 = @floatFromInt(x1);
+    var fy0: f32 = @floatFromInt(y0);
+    var fy1: f32 = @floatFromInt(y1);
+
+    // algorithm longs along x axis, so transpose if the line is longer in the
+    // y axis for better fidelity.
+    const transposed = dist(f32, fx0, fx1) < dist(f32, fy0, fy1);
+    if (transposed) {
+        std.mem.swap(f32, &fx0, &fy0);
+        std.mem.swap(f32, &fx1, &fy1);
+    }
+
+    if (fx0 > fx1) {
+        std.mem.swap(f32, &fx0, &fx1);
+        std.mem.swap(f32, &fy0, &fy1);
+    }
 
     var x: f32 = fx0;
     while (x <= fx1) : (x += 1) {
         const t: f32 = (x - fx0) / (fx1 - fx0);
         const y: u32 = @intFromFloat(fy0 * (1 - t) + fy1 * t);
-        image.set(@as(u32, @intFromFloat(x)), y, color);
+        if (transposed) {
+            image.set(y, @as(u32, @intFromFloat(x)), color);
+        } else {
+            image.set(@as(u32, @intFromFloat(x)), y, color);
+        }
     }
 }
 
