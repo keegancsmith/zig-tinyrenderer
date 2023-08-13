@@ -133,9 +133,11 @@ pub fn main() !void {
         .data = data[0..],
         .width = 100,
     };
-    line(13, 20, 80, 40, &image, white);
-    line(20, 13, 40, 80, &image, red);
-    line(80, 40, 13, 20, &image, red);
+    for (0..1_000_000) |_| {
+        line(13, 20, 80, 40, &image, white);
+        line(20, 13, 40, 80, &image, red);
+        line(80, 40, 13, 20, &image, red);
+    }
     image.flip_vertically();
     try image.write_tga_file("output.tga");
 }

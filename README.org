@@ -81,3 +81,60 @@ Only had a few minutes to hack, but did the first attempt. Zig seems a lot
 more explicit at casting between ints and floats, so the code was a bit
 verbose. Tried a bit to use cody to help with how to cast, but it generated
 slightly incorrect names.
+
+*** 2023-08-13 Sunday
+
+**** profiling zig for attempt 4 at line drawing [2023-08-13 Sun 21:11]
+
+I tried to profile the zig code as mentioned in the part about perf
+optimization in the line drawing. Felt like this was a good opportunity to
+expose myself to the tools.
+
+First I tried to use =gprof= but that fails since I think you have to be
+compiling with gcc to pass the =-pg= flag. Inspecting the output of =zig
+build= gave no clues.
+
+I then tried using perf. I got a bit further, but I don't think perf
+understands the symbols in zig (likely need to pass some flag to build?). This
+is what I did:
+
+#+begin_example
+nix-shell -p linuxKernel.packages.linux_6_1.perf
+zig build
+perf record -a -F 999 -g ./zig-out/bin/zig-tinyrenderer
+perf script -i perf.data > ~/Downloads/profile.linux-perf.txt
+#+end_example
+
+I then opened that final file in https://www.speedscope.app/ which is really
+neat. I always find using the FlameGraph repo super clunky, so was nice to
+find a convenient interface.
+
+While I was doing all of this I also downloaded Xcode on my macbook to try out
+Instruments. I created a time profile then made it target the zig binary. Ran
+it and it gave me great output straight away. This was a pleasant experience.
+In this case it told me that we spend 98.2% of the time in line, 40% of which
+is in calling set. I am guessing by removing the floating point stuff we
+should be able to get to set being much closer to the time spent.
+
+I then remember valgrind so tried that out on linux again. Given it isn't a
+sampling profiler it is very slow.
+
+#+begin_example
+nix-shell -p valgrind kcachegrind
+valgrind --tool=callgrind ./zig-out/bin/zig-tinyrenderer
+kcachegrind callgrind.out.17062
+#+end_example
+
+This also was missing function names. I am now convinced that error is PEBKAC
+so let me see if I can get debug info in my binary. I failed after toggling
+many a flag. Reading the build.zig and then reading TigerBeetles build.zig
+makes me like zig more though. Still don't know why I can't get it sorted out.
+
+Googling didn't give me much like, likely time to dust off my discord
+accounts. Additionally there was some mention of tracy, but that seems to be
+about instrumenting your code with spans which likely isn't as useful here vs
+a sampling profiler.
+
+Next hacking session I'll likely spend my time measuring relative perf
+improvement with something like hyperfine. Additionally the valgrind output is
+actually alright but I just need to guess the names of the symbols.
