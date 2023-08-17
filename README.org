@@ -207,3 +207,28 @@ And the hyperfine output:
     './zig-out/bin/zig-tinyrenderer-floats' ran
       1.00 ± 0.00 times faster than './zig-out/bin/zig-tinyrenderer'
 #+end_example
+
+**** testing with ReleaseFast [2023-08-17 Thu 16:54]
+
+Enabling optimizations made a big difference. But it made the float code even
+faster. Maybe this is something to do with the M2?
+
+: zig build -Doptimize=ReleaseFast
+
+#+begin_example
+  Benchmark 1: ./zig-out/bin/zig-tinyrenderer
+    Time (mean ± σ):     261.9 ms ± 140.1 ms    [User: 218.1 ms, System: 2.8 ms]
+    Range (min … max):   217.0 ms … 660.7 ms    10 runs
+
+    Warning: The first benchmarking run for this command was significantly slower than the rest (660.7 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+
+  Benchmark 2: ./zig-out/bin/zig-tinyrenderer-floats
+    Time (mean ± σ):     202.2 ms ± 143.9 ms    [User: 157.7 ms, System: 2.3 ms]
+    Range (min … max):   156.3 ms … 611.7 ms    10 runs
+
+    Warning: The first benchmarking run for this command was significantly slower than the rest (611.7 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+
+  Summary
+    './zig-out/bin/zig-tinyrenderer-floats' ran
+      1.30 ± 1.15 times faster than './zig-out/bin/zig-tinyrenderer'
+#+end_example
