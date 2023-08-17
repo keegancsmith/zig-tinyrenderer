@@ -138,3 +138,72 @@ a sampling profiler.
 Next hacking session I'll likely spend my time measuring relative perf
 improvement with something like hyperfine. Additionally the valgrind output is
 actually alright but I just need to guess the names of the symbols.
+
+*** 2023-08-17 Thursday
+
+**** floats are faster [2023-08-17 Thu 16:50]
+
+I probably need to experiment with better compilation options, but I the
+floats implementation was faster. Here is the dog ugly port for not using
+floats:
+
+#+begin_src zig
+  fn line(x0_: u32, y0_: u32, x1_: u32, y1_: u32, image: *TGAImage, color: TGAColor) void {
+      var x0: i32 = @as(i32, @intCast(x0_));
+      var x1: i32 = @as(i32, @intCast(x1_));
+      var y0: i32 = @as(i32, @intCast(y0_));
+      var y1: i32 = @as(i32, @intCast(y1_));
+
+      // algorithm longs along x axis, so transpose if the line is longer in the
+      // y axis for better fidelity.
+      const transposed = dist(i32, x0, x1) < dist(i32, y0, y1);
+      if (transposed) {
+          std.mem.swap(i32, &x0, &y0);
+          std.mem.swap(i32, &x1, &y1);
+      }
+
+      if (x0 > x1) {
+          std.mem.swap(i32, &x0, &x1);
+          std.mem.swap(i32, &y0, &y1);
+      }
+
+      const dx = x1 - x0;
+      const dy: i32 = y1 - y0;
+      var derror2 = dy * 2;
+      if (derror2 < 0) {
+          derror2 *= -1;
+      }
+      var error2: i32 = 0;
+      var y = y0;
+
+      var x: i32 = x0;
+      while (x <= x1) : (x += 1) {
+          if (transposed) {
+              image.set(@as(u32, @intCast(y)), @as(u32, @intCast(x)), color);
+          } else {
+              image.set(@as(u32, @intCast(x)), @as(u32, @intCast(y)), color);
+          }
+          error2 += derror2;
+          if (error2 > dx) {
+              y += if (y1 > y0) 1 else -1;
+              error2 -= dx * 2;
+          }
+      }
+  }
+#+end_src
+
+And the hyperfine output:
+
+#+begin_example
+  Benchmark 1: ./zig-out/bin/zig-tinyrenderer
+    Time (mean ± σ):      1.501 s ±  0.002 s    [User: 1.486 s, System: 0.014 s]
+    Range (min … max):    1.497 s …  1.503 s    10 runs
+
+  Benchmark 2: ./zig-out/bin/zig-tinyrenderer-floats
+    Time (mean ± σ):      1.496 s ±  0.001 s    [User: 1.483 s, System: 0.013 s]
+    Range (min … max):    1.495 s …  1.499 s    10 runs
+
+  Summary
+    './zig-out/bin/zig-tinyrenderer-floats' ran
+      1.00 ± 0.00 times faster than './zig-out/bin/zig-tinyrenderer'
+#+end_example
