@@ -25,7 +25,7 @@
     in
     rec {
       devShells.default = pkgs.mkShell {
-        nativeBuildInputs = [ pkgs.zigpkgs.master ];
+        nativeBuildInputs = [ pkgs.zigpkgs.master pkgs.zls ];
       };
 
       formatter = pkgs.nixpkgs-fmt;

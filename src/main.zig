@@ -127,17 +127,22 @@ fn line(x0: u32, y0: u32, x1: u32, y1: u32, image: *TGAImage, color: TGAColor) v
 pub fn main() !void {
     const white = TGAColor{ .r = 255, .g = 255, .b = 255 };
     const red = TGAColor{ .r = 255 };
+    const width = 800;
+    const height = 800;
 
-    var data = [_]TGAColor{.{}} ** (100 * 100);
+    const model_path = if (std.os.argv.len >= 2) std.os.argv[1] else "obj/african_head.obj";
+    std.debug.print("{s}", .{model_path});
+
+    var data = [_]TGAColor{.{}} ** (width * height);
     var image = TGAImage{
         .data = data[0..],
-        .width = 100,
+        .width = width,
     };
-    for (0..1_000_000) |_| {
-        line(13, 20, 80, 40, &image, white);
-        line(20, 13, 40, 80, &image, red);
-        line(80, 40, 13, 20, &image, red);
-    }
+
+    line(13, 20, 80, 40, &image, white);
+    line(20, 13, 40, 80, &image, red);
+    line(80, 40, 13, 20, &image, red);
+
     image.flip_vertically();
     try image.write_tga_file("output.tga");
 }
