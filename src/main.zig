@@ -93,7 +93,7 @@ fn dist(comptime T: type, x0: T, x1: T) T {
     }
 }
 
-fn line(x0: u32, y0: u32, x1: u32, y1: u32, image: *TGAImage, color: TGAColor) void {
+fn line(image: *TGAImage, x0: u32, y0: u32, x1: u32, y1: u32, color: TGAColor) void {
     var fx0: f32 = @floatFromInt(x0);
     var fx1: f32 = @floatFromInt(x1);
     var fy0: f32 = @floatFromInt(y0);
@@ -139,9 +139,9 @@ pub fn main() !void {
         .width = width,
     };
 
-    line(13, 20, 80, 40, &image, white);
-    line(20, 13, 40, 80, &image, red);
-    line(80, 40, 13, 20, &image, red);
+    line(&image, 13, 20, 80, 40, white);
+    line(&image, 20, 13, 40, 80, red);
+    line(&image, 80, 40, 13, 20, red);
 
     image.flip_vertically();
     try image.write_tga_file("output.tga");
