@@ -232,3 +232,27 @@ faster. Maybe this is something to do with the M2?
     './zig-out/bin/zig-tinyrenderer-floats' ran
       1.30 ± 1.15 times faster than './zig-out/bin/zig-tinyrenderer'
 #+end_example
+
+* 2024
+** 2024-01 January
+*** 2024-01-09 Tuesday
+
+**** getting back on the cart [2024-01-09 Tue 09:06]
+     :LOGBOOK:
+     CLOCK: [2024-01-09 Tue 09:06]
+     :END:
+
+Trying to work out where I was. I think I am still on the first lesson here
+https://github.com/ssloy/tinyrenderer/wiki/Lesson-1:-Bresenham%E2%80%99s-Line-Drawing-Algorithm#wireframe-rendering
+
+I have less than 30min, so will have the goal of just parsing the very first
+line from the object file.
+
+I remember reading some zig code on nice ways to just read files. I have vague
+memories of liking something from the zig repo tools dir. Will try find that
+and use it.
+
+I am looking at the patterns in =tools/docgen.zig=. The first change I make is
+to use =ArgIterator= instead of directly using =os.argv=. Main benefit is the
+code is nicer, cross platform and I get zig style strings instead of c's null
+terminated strings. This makes it easier to then open a file.

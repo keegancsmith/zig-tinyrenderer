@@ -1,4 +1,6 @@
 const std = @import("std");
+const fs = std.fs;
+const process = std.process;
 
 const TGAHeader = packed struct {
     idlength: u8,
@@ -125,13 +127,25 @@ fn line(image: *TGAImage, x0: u32, y0: u32, x1: u32, y1: u32, color: TGAColor) v
 }
 
 pub fn main() !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+
+    var args_it = try process.argsWithAllocator(allocator);
+    defer args_it.deinit();
+
+    if (!args_it.skip()) @panic("expected self arg");
+
+    const model_path = args_it.next() orelse "obj/african_head.obj";
+
+    var model_file = try fs.cwd().openFile(model_path, .{ .mode = .read_only });
+    defer model_file.close();
+
     const white = TGAColor{ .r = 255, .g = 255, .b = 255 };
     const red = TGAColor{ .r = 255 };
     const width = 800;
     const height = 800;
-
-    const model_path = if (std.os.argv.len >= 2) std.os.argv[1] else "obj/african_head.obj";
-    std.debug.print("{s}", .{model_path});
 
     var data = [_]TGAColor{.{}} ** (width * height);
     var image = TGAImage{
