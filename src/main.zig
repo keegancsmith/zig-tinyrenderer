@@ -1,6 +1,11 @@
 const std = @import("std");
+const fmt = std.fmt;
 const fs = std.fs;
+const mem = std.mem;
+const meta = std.meta;
 const process = std.process;
+
+const max_obj_file_size = 10 * 1024 * 1024;
 
 const TGAHeader = packed struct {
     idlength: u8,
@@ -141,6 +146,28 @@ pub fn main() !void {
 
     var model_file = try fs.cwd().openFile(model_path, .{ .mode = .read_only });
     defer model_file.close();
+
+    const model_file_bytes = try model_file.reader().readAllAlloc(allocator, max_obj_file_size);
+    defer allocator.free(model_file_bytes);
+
+    const ObjLineTypes = enum { v, f, g, s, vn, vt, @"#" };
+
+    var tok_it = mem.tokenizeAny(u8, model_file_bytes, " \n");
+    while (tok_it.next()) |type_str| {
+        const typ = meta.stringToEnum(ObjLineTypes, type_str) orelse @panic("unknown obj line type");
+        switch (typ) {
+            .v => {
+                const x = try fmt.parseFloat(f32, tok_it.next().?);
+                const y = try fmt.parseFloat(f32, tok_it.next().?);
+                const z = try fmt.parseFloat(f32, tok_it.next().?);
+                std.debug.print("v {d} {d} {d}\n", .{ x, y, z });
+            },
+
+            else => {
+                @panic("unknown type");
+            },
+        }
+    }
 
     const white = TGAColor{ .r = 255, .g = 255, .b = 255 };
     const red = TGAColor{ .r = 255 };

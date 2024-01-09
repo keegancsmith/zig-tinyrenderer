@@ -239,7 +239,7 @@ faster. Maybe this is something to do with the M2?
 
 **** getting back on the cart [2024-01-09 Tue 09:06]
      :LOGBOOK:
-     CLOCK: [2024-01-09 Tue 09:06]
+     CLOCK: [2024-01-09 Tue 09:06]--[2024-01-09 Tue 10:02] =>  0:56
      :END:
 
 Trying to work out where I was. I think I am still on the first lesson here
@@ -256,3 +256,22 @@ I am looking at the patterns in =tools/docgen.zig=. The first change I make is
 to use =ArgIterator= instead of directly using =os.argv=. Main benefit is the
 code is nicer, cross platform and I get zig style strings instead of c's null
 terminated strings. This makes it easier to then open a file.
+
+Alright I spent more than 30min, did just under an hour. It was fun though. I
+started a parser which only parses the "v" lines and then panics. So easy to
+pick up for next time.
+
+Right now I am running
+
+: zig run main.zig -- ../obj/african_head.obj
+
+I did this via lots of grepping of the zig source code, using imenu in emacs
+and some googling. Googling helped me find the pretty neat trick of creating
+an enum, and then using =std.meta.stringToEnum= for a neat way to treat each
+object line type as an enum.
+
+Something I also learnt is you can't just use imenu on say fmt.zig to see
+everything under the fmt import. For example it missed parseFloat because the
+line in fmt.zig is declared like follows:
+
+: pub const parseFloat = @import("fmt/parse_float.zig").parseFloat;
