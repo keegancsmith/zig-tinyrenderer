@@ -275,3 +275,19 @@ everything under the fmt import. For example it missed parseFloat because the
 line in fmt.zig is declared like follows:
 
 : pub const parseFloat = @import("fmt/parse_float.zig").parseFloat;
+
+*** 2024-01-10 Wednesday
+
+**** More file parsing [2024-01-10 Wed 08:36]
+     :LOGBOOK:
+     CLOCK: [2024-01-10 Wed 08:36]--[2024-01-10 Wed 09:03] =>  0:27
+     :END:
+
+Goal is in 25m parse everything in the file without a panic. Right now I am
+splitting on space or newline. To handle comment lines I likely need to split
+on lines and do further parsing. I am hoping for some sort of scanf, to see
+how that works, but I don't see any exported things in zig with the word scan
+in it and no useful functions.
+
+Managed to parse all lines except the vertex normal lines (f). The parser is
+super naive and would likely break on anything that isn't african_head.obj.

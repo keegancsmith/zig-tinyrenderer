@@ -100,7 +100,7 @@ fn dist(comptime T: type, x0: T, x1: T) T {
     }
 }
 
-fn line(image: *TGAImage, x0: u32, y0: u32, x1: u32, y1: u32, color: TGAColor) void {
+fn draw_line(image: *TGAImage, x0: u32, y0: u32, x1: u32, y1: u32, color: TGAColor) void {
     var fx0: f32 = @floatFromInt(x0);
     var fx1: f32 = @floatFromInt(x1);
     var fy0: f32 = @floatFromInt(y0);
@@ -152,20 +152,59 @@ pub fn main() !void {
 
     const ObjLineTypes = enum { v, f, g, s, vn, vt, @"#" };
 
-    var tok_it = mem.tokenizeAny(u8, model_file_bytes, " \n");
-    while (tok_it.next()) |type_str| {
-        const typ = meta.stringToEnum(ObjLineTypes, type_str) orelse @panic("unknown obj line type");
+    var tok_it = mem.tokenizeAny(u8, model_file_bytes, "\n");
+    while (tok_it.next()) |line| {
+        var parts_it = mem.tokenize(u8, line, " ");
+        const typ_str = parts_it.next() orelse continue;
+        const typ = meta.stringToEnum(ObjLineTypes, typ_str) orelse @panic("unknown obj line type");
         switch (typ) {
             .v => {
-                const x = try fmt.parseFloat(f32, tok_it.next().?);
-                const y = try fmt.parseFloat(f32, tok_it.next().?);
-                const z = try fmt.parseFloat(f32, tok_it.next().?);
+                const x = try fmt.parseFloat(f32, parts_it.next().?);
+                const y = try fmt.parseFloat(f32, parts_it.next().?);
+                const z = try fmt.parseFloat(f32, parts_it.next().?);
                 std.debug.print("v {d} {d} {d}\n", .{ x, y, z });
             },
 
-            else => {
-                @panic("unknown type");
+            .vt => {
+                const x = try fmt.parseFloat(f32, parts_it.next().?);
+                const y = try fmt.parseFloat(f32, parts_it.next().?);
+                const z = try fmt.parseFloat(f32, parts_it.next().?);
+                std.debug.print("vt {d} {d} {d}\n", .{ x, y, z });
             },
+
+            .vn => {
+                const x = try fmt.parseFloat(f32, parts_it.next().?);
+                const y = try fmt.parseFloat(f32, parts_it.next().?);
+                const z = try fmt.parseFloat(f32, parts_it.next().?);
+                std.debug.print("vn {d} {d} {d}\n", .{ x, y, z });
+            },
+
+            .g => {
+                const name = parts_it.next().?;
+                std.debug.print("g {s}\n", .{name});
+            },
+
+            .s => {
+                const v = parts_it.next().?;
+                const smooth_shading_on = std.mem.eql(u8, v, "1") or std.mem.eql(u8, v, "on");
+                std.debug.print("s {any}\n", .{smooth_shading_on});
+            },
+
+            .f => {
+                var count: u8 = 0;
+                var weird = false;
+                while (parts_it.next()) |normal| {
+                    weird = weird or std.mem.count(u8, normal, "/") != 2;
+                    count += 1;
+                }
+                weird = weird or count != 3;
+                if (weird) {
+                    std.debug.print("weird line {s}\n", .{line});
+                }
+                // TODO parse 3 normals
+            },
+
+            .@"#" => {},
         }
     }
 
@@ -180,9 +219,9 @@ pub fn main() !void {
         .width = width,
     };
 
-    line(&image, 13, 20, 80, 40, white);
-    line(&image, 20, 13, 40, 80, red);
-    line(&image, 80, 40, 13, 20, red);
+    draw_line(&image, 13, 20, 80, 40, white);
+    draw_line(&image, 20, 13, 40, 80, red);
+    draw_line(&image, 80, 40, 13, 20, red);
 
     image.flip_vertically();
     try image.write_tga_file("output.tga");
