@@ -191,17 +191,25 @@ pub fn main() !void {
             },
 
             .f => {
-                var count: u8 = 0;
-                var weird = false;
+                // Lots of different ways this line can appear, but we just
+                // support something that looks like
+                //
+                //   f 1201/1249/1201 1202/1248/1202 1200/1246/1200
+                //
+                // We also only care about the vertex index which is the first
+                // value.
+                var vertex_indices = [_]u32{0} ** 3;
+                var i: usize = 0;
                 while (parts_it.next()) |normal| {
-                    weird = weird or std.mem.count(u8, normal, "/") != 2;
-                    count += 1;
+                    const first = std.mem.indexOf(u8, normal, "/") orelse normal.len;
+                    const idx = try fmt.parseInt(u32, normal[0..first], 10);
+                    vertex_indices[i] = idx - 1;
+                    i += 1;
+                    if (i >= 3) {
+                        break;
+                    }
                 }
-                weird = weird or count != 3;
-                if (weird) {
-                    std.debug.print("weird line {s}\n", .{line});
-                }
-                // TODO parse 3 normals
+                std.debug.print("f {any}\n", .{vertex_indices});
             },
 
             .@"#" => {},

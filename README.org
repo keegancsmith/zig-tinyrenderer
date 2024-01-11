@@ -291,3 +291,18 @@ in it and no useful functions.
 
 Managed to parse all lines except the vertex normal lines (f). The parser is
 super naive and would likely break on anything that isn't african_head.obj.
+
+*** 2024-01-11 Thursday
+
+**** parse vertex normals [2024-01-11 Thu 10:19]
+     :LOGBOOK:
+     CLOCK: [2024-01-11 Thu 10:19]--[2024-01-11 Thu 10:41] =>  0:22
+     :END:
+
+Very short amount of coding due morning beach visit. Will just aim to parse
+the vertex normals.
+
+Took a bit of time to work out what each value is, then looked at the
+reference implementation and we actually only care about the first value. So
+implemented that after some working out of how to initiliaze arrays/etc in
+zig.
