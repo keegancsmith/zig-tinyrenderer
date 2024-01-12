@@ -306,3 +306,30 @@ Took a bit of time to work out what each value is, then looked at the
 reference implementation and we actually only care about the first value. So
 implemented that after some working out of how to initiliaze arrays/etc in
 zig.
+
+*** 2024-01-12 Friday
+
+**** researching iterator [2024-01-12 Fri 12:41]
+     :LOGBOOK:
+     CLOCK: [2024-01-12 Fri 12:41]--[2024-01-12 Fri 12:58] =>  0:17
+     :END:
+
+When looking at the reference implementation it only handles vertices and
+faces. I wanna simplify this implementation to only support those two.
+However, I also wanna see what it is like to implement an iterator in zig.
+
+I am looking at how tokenize works in the stdlib. There is some magic here
+which is pretty damn cool and I didn't realise zig did this. So =tokenizeAny=
+returns the type =TokenIterator(T, .any)=. =TokenIterator= is a function, but
+its a function which returns a type. So at comptime zig calls the function! So
+cool.
+
+I wasn't sure what =.any= was. I thought it was something special. Turns out
+the 2nd arg is an enum, where any is one of the values. So cool.
+
+I don't think I need comptime stuff here, so will see how to construct this.
+Actually if I want to take in an iterator for u8, it needs to be generic. This
+makes me think I should try out comptime stuff. But it is likely too fancy,
+and all I really need is to implement a function which will return an iterator
+over the fully read in []u8. Then the iterator type will be
+=mem.TokenIterator(u8, .any)=.
