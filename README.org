@@ -333,3 +333,31 @@ makes me think I should try out comptime stuff. But it is likely too fancy,
 and all I really need is to implement a function which will return an iterator
 over the fully read in []u8. Then the iterator type will be
 =mem.TokenIterator(u8, .any)=.
+
+*** 2024-01-15 Monday
+
+**** representing unions [2024-01-15 Mon 11:25]
+     :LOGBOOK:
+     CLOCK: [2024-01-15 Mon 11:49]--[2024-01-15 Mon 12:11] =>  0:22
+     CLOCK: [2024-01-15 Mon 11:25]--[2024-01-15 Mon 11:33] =>  0:08
+     :END:
+
+I have a short amount of time today, so just going to focus on how I would
+represent the type returned by the iterator. My focus will just be on face and
+vertex, and the face can only have 3 vertices so that I can represent it on
+the stack.
+
+https://zig.news/edyu/zig-unionenum-wtf-is-switchunionenum-2e02 seems like a
+good article on what I want to do. What I want is called a tagged union and
+looks like =union(enum)=.
+
+It took me a while how to work out how to get the enum type from the tagged
+union. =meta.stringToEnum= would complain I was passing in a union. Initially
+I just declared the enum and repeated myself. But then found =meta.Tag= which
+extracts the tag type. The way I found this was grepping for =@as.*enum= and
+then looking for results relating to unions, which then had a test asserting
+that the type for a tagged unions enum was the same as calling meta.Tag...
+this isn't at all obvious lol.
+
+But then it was pretty smooth after that and now I just have it printing out
+the entities. Next time I can turn this into an iterator.

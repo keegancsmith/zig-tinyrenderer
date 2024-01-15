@@ -131,6 +131,11 @@ fn draw_line(image: *TGAImage, x0: u32, y0: u32, x1: u32, y1: u32, color: TGACol
     }
 }
 
+const WavefrontObjEntity = union(enum) {
+    v: [3]f32,
+    f: [3]u32,
+};
+
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -150,44 +155,19 @@ pub fn main() !void {
     const model_file_bytes = try model_file.reader().readAllAlloc(allocator, max_obj_file_size);
     defer allocator.free(model_file_bytes);
 
-    const ObjLineTypes = enum { v, f, g, s, vn, vt, @"#" };
-
     var tok_it = mem.tokenizeAny(u8, model_file_bytes, "\n");
     while (tok_it.next()) |line| {
         var parts_it = mem.tokenize(u8, line, " ");
         const typ_str = parts_it.next() orelse continue;
-        const typ = meta.stringToEnum(ObjLineTypes, typ_str) orelse @panic("unknown obj line type");
+        const typ = meta.stringToEnum(meta.Tag(WavefrontObjEntity), typ_str) orelse continue;
         switch (typ) {
             .v => {
-                const x = try fmt.parseFloat(f32, parts_it.next().?);
-                const y = try fmt.parseFloat(f32, parts_it.next().?);
-                const z = try fmt.parseFloat(f32, parts_it.next().?);
-                std.debug.print("v {d} {d} {d}\n", .{ x, y, z });
-            },
-
-            .vt => {
-                const x = try fmt.parseFloat(f32, parts_it.next().?);
-                const y = try fmt.parseFloat(f32, parts_it.next().?);
-                const z = try fmt.parseFloat(f32, parts_it.next().?);
-                std.debug.print("vt {d} {d} {d}\n", .{ x, y, z });
-            },
-
-            .vn => {
-                const x = try fmt.parseFloat(f32, parts_it.next().?);
-                const y = try fmt.parseFloat(f32, parts_it.next().?);
-                const z = try fmt.parseFloat(f32, parts_it.next().?);
-                std.debug.print("vn {d} {d} {d}\n", .{ x, y, z });
-            },
-
-            .g => {
-                const name = parts_it.next().?;
-                std.debug.print("g {s}\n", .{name});
-            },
-
-            .s => {
-                const v = parts_it.next().?;
-                const smooth_shading_on = std.mem.eql(u8, v, "1") or std.mem.eql(u8, v, "on");
-                std.debug.print("s {any}\n", .{smooth_shading_on});
+                const ent = WavefrontObjEntity{ .v = [3]f32{
+                    try fmt.parseFloat(f32, parts_it.next().?),
+                    try fmt.parseFloat(f32, parts_it.next().?),
+                    try fmt.parseFloat(f32, parts_it.next().?),
+                } };
+                std.debug.print("{any}\n", .{ent});
             },
 
             .f => {
@@ -209,10 +189,9 @@ pub fn main() !void {
                         break;
                     }
                 }
-                std.debug.print("f {any}\n", .{vertex_indices});
+                const ent = WavefrontObjEntity{ .f = vertex_indices };
+                std.debug.print("{any}\n", .{ent});
             },
-
-            .@"#" => {},
         }
     }
 
