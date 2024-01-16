@@ -136,6 +136,54 @@ const WavefrontObjEntity = union(enum) {
     f: [3]u32,
 };
 
+const WavefrontObjIterator = struct {
+    line_iter: mem.TokenIterator(u8, .any),
+
+    pub fn next(self: *WavefrontObjIterator) !?WavefrontObjEntity {
+        while (self.line_iter.next()) |line| {
+            var parts_it = mem.tokenize(u8, line, " ");
+            const typ_str = parts_it.next() orelse continue;
+            const typ = meta.stringToEnum(meta.Tag(WavefrontObjEntity), typ_str) orelse continue;
+
+            // TODO maybe this can be a return and each case returns something?
+            switch (typ) {
+                .v => {
+                    return .{
+                        .v = [3]f32{
+                            try fmt.parseFloat(f32, parts_it.next().?),
+                            try fmt.parseFloat(f32, parts_it.next().?),
+                            try fmt.parseFloat(f32, parts_it.next().?),
+                        },
+                    };
+                },
+
+                .f => {
+                    // Lots of different ways this line can appear, but we just
+                    // support something that looks like
+                    //
+                    //   f 1201/1249/1201 1202/1248/1202 1200/1246/1200
+                    //
+                    // We also only care about the vertex index which is the first
+                    // value.
+                    var vertex_indices = [_]u32{0} ** 3;
+                    var i: usize = 0;
+                    while (parts_it.next()) |normal| {
+                        const first = std.mem.indexOf(u8, normal, "/") orelse normal.len;
+                        const idx = try fmt.parseInt(u32, normal[0..first], 10);
+                        vertex_indices[i] = idx - 1;
+                        i += 1;
+                        if (i >= 3) {
+                            break;
+                        }
+                    }
+                    return .{ .f = vertex_indices };
+                },
+            }
+        }
+        return null;
+    }
+};
+
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -155,44 +203,11 @@ pub fn main() !void {
     const model_file_bytes = try model_file.reader().readAllAlloc(allocator, max_obj_file_size);
     defer allocator.free(model_file_bytes);
 
-    var tok_it = mem.tokenizeAny(u8, model_file_bytes, "\n");
-    while (tok_it.next()) |line| {
-        var parts_it = mem.tokenize(u8, line, " ");
-        const typ_str = parts_it.next() orelse continue;
-        const typ = meta.stringToEnum(meta.Tag(WavefrontObjEntity), typ_str) orelse continue;
-        switch (typ) {
-            .v => {
-                const ent = WavefrontObjEntity{ .v = [3]f32{
-                    try fmt.parseFloat(f32, parts_it.next().?),
-                    try fmt.parseFloat(f32, parts_it.next().?),
-                    try fmt.parseFloat(f32, parts_it.next().?),
-                } };
-                std.debug.print("{any}\n", .{ent});
-            },
-
-            .f => {
-                // Lots of different ways this line can appear, but we just
-                // support something that looks like
-                //
-                //   f 1201/1249/1201 1202/1248/1202 1200/1246/1200
-                //
-                // We also only care about the vertex index which is the first
-                // value.
-                var vertex_indices = [_]u32{0} ** 3;
-                var i: usize = 0;
-                while (parts_it.next()) |normal| {
-                    const first = std.mem.indexOf(u8, normal, "/") orelse normal.len;
-                    const idx = try fmt.parseInt(u32, normal[0..first], 10);
-                    vertex_indices[i] = idx - 1;
-                    i += 1;
-                    if (i >= 3) {
-                        break;
-                    }
-                }
-                const ent = WavefrontObjEntity{ .f = vertex_indices };
-                std.debug.print("{any}\n", .{ent});
-            },
-        }
+    var ent_it = WavefrontObjIterator{
+        .line_iter = mem.tokenizeAny(u8, model_file_bytes, "\n"),
+    };
+    while (try ent_it.next()) |ent| {
+        std.debug.print("{any}\n", .{ent});
     }
 
     const white = TGAColor{ .r = 255, .g = 255, .b = 255 };

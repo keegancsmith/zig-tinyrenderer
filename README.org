@@ -361,3 +361,23 @@ this isn't at all obvious lol.
 
 But then it was pretty smooth after that and now I just have it printing out
 the entities. Next time I can turn this into an iterator.
+
+*** 2024-01-16 Tuesday
+
+**** making an iterator [2024-01-16 Tue 12:21]
+     :LOGBOOK:
+     CLOCK: [2024-01-16 Tue 12:21]--[2024-01-16 Tue 12:38] =>  0:17
+     :END:
+
+Only goal for today is to make the iterator, then I will finally be more
+productive and do things like rendering.
+
+Actually as I was implementing it I realized it would be nicer to just wrap
+the iterator. But I will stick with the more verbose implementation since I
+feel like it is more standard. Maybe tomorrow follow up with comptime stuff.
+
+Code feels nice like this. I tried to define the error set for the iterator,
+but had trouble working out how to union error sets. So instead I am just
+relying on the inferred error set. I could also explicitly list out the error
+set enum. It seems pretty cool in zig, the error set is basically a global
+enum, so if you reuse a name you get the same enum value.
