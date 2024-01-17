@@ -381,3 +381,14 @@ but had trouble working out how to union error sets. So instead I am just
 relying on the inferred error set. I could also explicitly list out the error
 set enum. It seems pretty cool in zig, the error set is basically a global
 enum, so if you reuse a name you get the same enum value.
+
+*** 2024-01-17 Wednesday
+
+**** storing obj in memory for rendering [2024-01-17 Wed 08:56]
+     :LOGBOOK:
+     CLOCK: [2024-01-17 Wed 08:57]--[2024-01-17 Wed 09:46] =>  0:49
+     :END:
+
+Rendered the model to disk now. I had some issues with out of bounds vertices,
+mainly around hitting the width or height. I think that is likely due to
+rounding up behaviour when scaling the image to fix.

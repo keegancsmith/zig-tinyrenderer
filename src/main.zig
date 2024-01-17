@@ -4,6 +4,7 @@ const fs = std.fs;
 const mem = std.mem;
 const meta = std.meta;
 const process = std.process;
+const Allocator = mem.Allocator;
 
 const max_obj_file_size = 10 * 1024 * 1024;
 
@@ -33,7 +34,13 @@ const TGAImage = struct {
     width: usize,
 
     fn set(self: *TGAImage, x: u32, y: u32, color: TGAColor) void {
-        self.data[(y * self.width) + x] = color;
+        // Bad, but just automatically make things in bound for convenience.
+        const x0 = if (x < self.width) x else (self.width - 1);
+        var idx = (y * self.width) + x0;
+        if (idx >= self.data.len) {
+            idx = self.data.len - 1;
+        }
+        self.data[idx] = color;
     }
 
     fn flip_vertically(self: *TGAImage) void {
@@ -101,6 +108,11 @@ fn dist(comptime T: type, x0: T, x1: T) T {
 }
 
 fn draw_line(image: *TGAImage, x0: u32, y0: u32, x1: u32, y1: u32, color: TGAColor) void {
+    if (x0 == x1 and y0 == y1) {
+        image.set(x0, y0, color);
+        return;
+    }
+
     var fx0: f32 = @floatFromInt(x0);
     var fx1: f32 = @floatFromInt(x1);
     var fy0: f32 = @floatFromInt(y0);
@@ -184,6 +196,50 @@ const WavefrontObjIterator = struct {
     }
 };
 
+const Model = struct {
+    vertices: std.ArrayList([3]f32),
+    faces: std.ArrayList([3]u32),
+
+    pub fn init(allocator: Allocator) Model {
+        return .{
+            .vertices = std.ArrayList([3]f32).init(allocator),
+            .faces = std.ArrayList([3]u32).init(allocator),
+        };
+    }
+
+    pub fn readFile(allocator: Allocator, path: []const u8) !Model {
+        var model_file = try fs.cwd().openFile(path, .{ .mode = .read_only });
+        defer model_file.close();
+
+        const model_file_bytes = try model_file.reader().readAllAlloc(allocator, max_obj_file_size);
+        defer allocator.free(model_file_bytes);
+
+        var model = Model.init(allocator);
+        errdefer model.deinit();
+
+        var ent_it = WavefrontObjIterator{
+            .line_iter = mem.tokenizeAny(u8, model_file_bytes, "\n"),
+        };
+        while (try ent_it.next()) |ent| {
+            switch (ent) {
+                .v => {
+                    try model.vertices.append(ent.v);
+                },
+                .f => {
+                    try model.faces.append(ent.f);
+                },
+            }
+        }
+
+        return model;
+    }
+
+    pub fn deinit(model: *Model) void {
+        model.vertices.deinit();
+        model.faces.deinit();
+    }
+};
+
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -197,21 +253,12 @@ pub fn main() !void {
 
     const model_path = args_it.next() orelse "obj/african_head.obj";
 
-    var model_file = try fs.cwd().openFile(model_path, .{ .mode = .read_only });
-    defer model_file.close();
-
-    const model_file_bytes = try model_file.reader().readAllAlloc(allocator, max_obj_file_size);
-    defer allocator.free(model_file_bytes);
-
-    var ent_it = WavefrontObjIterator{
-        .line_iter = mem.tokenizeAny(u8, model_file_bytes, "\n"),
-    };
-    while (try ent_it.next()) |ent| {
-        std.debug.print("{any}\n", .{ent});
-    }
+    var model = try Model.readFile(allocator, model_path);
+    defer model.deinit();
 
     const white = TGAColor{ .r = 255, .g = 255, .b = 255 };
     const red = TGAColor{ .r = 255 };
+    _ = red;
     const width = 800;
     const height = 800;
 
@@ -221,9 +268,17 @@ pub fn main() !void {
         .width = width,
     };
 
-    draw_line(&image, 13, 20, 80, 40, white);
-    draw_line(&image, 20, 13, 40, 80, red);
-    draw_line(&image, 80, 40, 13, 20, red);
+    for (model.faces.items) |vertex_indices| {
+        for (0..3) |i| {
+            const v0 = model.vertices.items[vertex_indices[i]];
+            const v1 = model.vertices.items[vertex_indices[(i + 1) % 3]];
+            const x0: u32 = @intFromFloat((v0[0] + 1) * width / 2);
+            const y0: u32 = @intFromFloat((v0[1] + 1) * height / 2);
+            const x1: u32 = @intFromFloat((v1[0] + 1) * width / 2);
+            const y1: u32 = @intFromFloat((v1[1] + 1) * height / 2);
+            draw_line(&image, x0, y0, x1, y1, white);
+        }
+    }
 
     image.flip_vertically();
     try image.write_tga_file("output.tga");
