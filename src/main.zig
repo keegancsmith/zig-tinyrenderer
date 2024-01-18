@@ -33,10 +33,10 @@ const TGAImage = struct {
     data: []TGAColor,
     width: usize,
 
-    fn set(self: *TGAImage, x: u32, y: u32, color: TGAColor) void {
+    fn set(self: *TGAImage, t: Vec2i, color: TGAColor) void {
         // Bad, but just automatically make things in bound for convenience.
-        const x0 = if (x < self.width) x else (self.width - 1);
-        var idx = (y * self.width) + x0;
+        const x = if (t[0] < self.width) t[0] else (self.width - 1);
+        var idx = (t[1] * self.width) + x;
         if (idx >= self.data.len) {
             idx = self.data.len - 1;
         }
@@ -107,16 +107,16 @@ fn dist(comptime T: type, x0: T, x1: T) T {
     }
 }
 
-fn draw_line(image: *TGAImage, x0: u32, y0: u32, x1: u32, y1: u32, color: TGAColor) void {
-    if (x0 == x1 and y0 == y1) {
-        image.set(x0, y0, color);
+fn draw_line(image: *TGAImage, t0: Vec2i, t1: Vec2i, color: TGAColor) void {
+    if (t0[0] == t1[0] and t0[1] == t1[1]) {
+        image.set(t0, color);
         return;
     }
 
-    var fx0: f32 = @floatFromInt(x0);
-    var fx1: f32 = @floatFromInt(x1);
-    var fy0: f32 = @floatFromInt(y0);
-    var fy1: f32 = @floatFromInt(y1);
+    var fx0: f32 = @floatFromInt(t0[0]);
+    var fx1: f32 = @floatFromInt(t1[0]);
+    var fy0: f32 = @floatFromInt(t0[1]);
+    var fy1: f32 = @floatFromInt(t1[1]);
 
     // algorithm longs along x axis, so transpose if the line is longer in the
     // y axis for better fidelity.
@@ -136,9 +136,9 @@ fn draw_line(image: *TGAImage, x0: u32, y0: u32, x1: u32, y1: u32, color: TGACol
         const t: f32 = (x - fx0) / (fx1 - fx0);
         const y: u32 = @intFromFloat(fy0 * (1 - t) + fy1 * t);
         if (transposed) {
-            image.set(y, @as(u32, @intFromFloat(x)), color);
+            image.set(Vec2i{ y, @as(u32, @intFromFloat(x)) }, color);
         } else {
-            image.set(@as(u32, @intFromFloat(x)), y, color);
+            image.set(Vec2i{ @as(u32, @intFromFloat(x)), y }, color);
         }
     }
 }
@@ -240,6 +240,14 @@ const Model = struct {
     }
 };
 
+const Vec2i = [2]u32;
+
+fn draw_triangle(image: *TGAImage, t0: Vec2i, t1: Vec2i, t2: Vec2i, color: TGAColor) void {
+    draw_line(image, t0, t1, color);
+    draw_line(image, t1, t2, color);
+    draw_line(image, t2, t0, color);
+}
+
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -258,7 +266,7 @@ pub fn main() !void {
 
     const white = TGAColor{ .r = 255, .g = 255, .b = 255 };
     const red = TGAColor{ .r = 255 };
-    _ = red;
+    const green = TGAColor{ .g = 255 };
     const width = 800;
     const height = 800;
 
@@ -272,13 +280,24 @@ pub fn main() !void {
         for (0..3) |i| {
             const v0 = model.vertices.items[vertex_indices[i]];
             const v1 = model.vertices.items[vertex_indices[(i + 1) % 3]];
-            const x0: u32 = @intFromFloat((v0[0] + 1) * width / 2);
-            const y0: u32 = @intFromFloat((v0[1] + 1) * height / 2);
-            const x1: u32 = @intFromFloat((v1[0] + 1) * width / 2);
-            const y1: u32 = @intFromFloat((v1[1] + 1) * height / 2);
-            draw_line(&image, x0, y0, x1, y1, white);
+            const t0 = Vec2i{
+                @intFromFloat((v0[0] + 1) * width / 2),
+                @intFromFloat((v0[1] + 1) * height / 2),
+            };
+            const t1 = Vec2i{
+                @intFromFloat((v1[0] + 1) * width / 2),
+                @intFromFloat((v1[1] + 1) * height / 2),
+            };
+            draw_line(&image, t0, t1, white);
         }
     }
+
+    const t0 = [_]Vec2i{ .{ 10, 70 }, .{ 50, 160 }, .{ 70, 80 } };
+    const t1 = [_]Vec2i{ .{ 180, 50 }, .{ 150, 1 }, .{ 70, 180 } };
+    const t2 = [_]Vec2i{ .{ 180, 150 }, .{ 120, 160 }, .{ 130, 180 } };
+    draw_triangle(&image, t0[0], t0[1], t0[2], red);
+    draw_triangle(&image, t1[0], t1[1], t1[2], white);
+    draw_triangle(&image, t2[0], t2[1], t2[2], green);
 
     image.flip_vertically();
     try image.write_tga_file("output.tga");

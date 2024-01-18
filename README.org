@@ -392,3 +392,17 @@ enum, so if you reuse a name you get the same enum value.
 Rendered the model to disk now. I had some issues with out of bounds vertices,
 mainly around hitting the width or height. I think that is likely due to
 rounding up behaviour when scaling the image to fix.
+
+*** 2024-01-18 Thursday
+
+**** start of lesson 2 [2024-01-18 Thu 08:42]
+     :LOGBOOK:
+     CLOCK: [2024-01-18 Thu 08:42]--[2024-01-18 Thu 09:06] =>  0:24
+     :END:
+
+https://github.com/ssloy/tinyrenderer/wiki/Lesson-2:-Triangle-rasterization-and-back-face-culling
+
+Today I am just gonna see how to implement the Vec2i class he uses, but
+without templates. I managed to do that fairly quickly, but gonna call it at
+that. Also refactored code to use that instead + drew the 3 triangles. Next
+time I will attempt his bullet points at improving the triangle function.
