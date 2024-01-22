@@ -406,3 +406,36 @@ Today I am just gonna see how to implement the Vec2i class he uses, but
 without templates. I managed to do that fairly quickly, but gonna call it at
 that. Also refactored code to use that instead + drew the 3 triangles. Next
 time I will attempt his bullet points at improving the triangle function.
+
+*** 2024-01-22 Monday
+
+**** deriving triangle filling algorithm [2024-01-22 Mon 08:17]
+     :LOGBOOK:
+     CLOCK: [2024-01-22 Mon 08:17]--[2024-01-22 Mon 09:05] =>  0:48
+     :END:
+
+[[./triangle_filling_note.jpeg]]
+
+Yesterday got out a pencil and paper and derived some high school math around
+how to draw a filled triangle. Was a lot of fun. Gonna likely spend some time
+playing around with this until I am happy, then will look up what is the fast
+way.
+
+Right now what I have is sorting the points by x value, then label them A B C.
+You then iterate the points in the line AB AC via asking what is y for each x.
+Once AB ends you switch to BC. For each pair of points you fill in all y
+between the two.
+
+I realise I can likely convert the bresenham algorithm into an iterator for
+reuse here. I think I will first implement the shitty floating point one just
+to see something, then will work out how to reuse the line drawing logic.
+
+Another minor perf change I realised I need is likely sorting by y since in
+the underlying datastructure =(x, y)= and =(x+1, y)= live next to each other
+in memory.
+
+[2024-01-22 Mon 09:02] Implemented it, but there are a bunch of artifacts in
+this simple implementation which are surprising. Makes me think my draw_line
+algorithm is a bit messed up.
+
+[[./filled_triangle_take1.png]]

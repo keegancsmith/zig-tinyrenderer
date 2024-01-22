@@ -243,9 +243,72 @@ const Model = struct {
 const Vec2i = [2]u32;
 
 fn draw_triangle(image: *TGAImage, t0: Vec2i, t1: Vec2i, t2: Vec2i, color: TGAColor) void {
-    draw_line(image, t0, t1, color);
-    draw_line(image, t1, t2, color);
-    draw_line(image, t2, t0, color);
+    // order the points by x
+    var ordered = [_]Vec2i{ t0, t1, t2 };
+    if (ordered[0][0] > ordered[1][0]) {
+        mem.swap(Vec2i, &ordered[0], &ordered[1]);
+    }
+    if (ordered[0][0] > ordered[2][0]) {
+        mem.swap(Vec2i, &ordered[0], &ordered[2]);
+    }
+    if (ordered[1][0] > ordered[2][0]) {
+        mem.swap(Vec2i, &ordered[1], &ordered[2]);
+    }
+
+    const a_x: f32 = @floatFromInt(ordered[0][0]);
+    const a_y: f32 = @floatFromInt(ordered[0][1]);
+    const b_x: f32 = @floatFromInt(ordered[1][0]);
+    const b_y: f32 = @floatFromInt(ordered[1][1]);
+    const c_x: f32 = @floatFromInt(ordered[2][0]);
+    const c_y: f32 = @floatFromInt(ordered[2][1]);
+
+    const ab_slope = if (a_x != b_x) ((b_y - a_y) / (b_x - a_x)) else 0;
+    const ac_slope = if (a_x != c_x) ((c_y - a_y) / (c_x - a_x)) else 0;
+    const bc_slope = if (b_x != c_x) ((c_y - b_y) / (c_x - b_x)) else 0;
+
+    const ab_C = a_y - ab_slope * a_x;
+    const ac_C = a_y - ac_slope * a_x;
+    const bc_C = b_y - bc_slope * b_x;
+
+    // mid_x is the x value where we stop drawing AB and start drawing BC. If
+    // a_x == b_x then we skip AB since BC will cover it.
+    const mid_x = if (ordered[0][0] == ordered[1][0]) ordered[1][0] else (ordered[1][0] + 1);
+
+    for (ordered[0][0]..mid_x) |x| {
+        const xf: f32 = @floatFromInt(x);
+        var ab_y = ab_slope * xf + ab_C;
+        var ac_y = ac_slope * xf + ac_C;
+
+        if (ab_y < 0) {
+            ab_y = 0;
+        }
+        if (ac_y < 0) {
+            ac_y = 0;
+        }
+
+        const p0 = Vec2i{ @intCast(x), @intFromFloat(ab_y) };
+        const p1 = Vec2i{ @intCast(x), @intFromFloat(ac_y) };
+
+        draw_line(image, p0, p1, color);
+    }
+
+    for (mid_x..ordered[2][0] + 1) |x| {
+        const xf: f32 = @floatFromInt(x);
+        var ac_y = ac_slope * xf + ac_C;
+        var bc_y = bc_slope * xf + bc_C;
+
+        if (ac_y < 0) {
+            ac_y = 0;
+        }
+        if (bc_y < 0) {
+            bc_y = 0;
+        }
+
+        const p0 = Vec2i{ @intCast(x), @intFromFloat(ac_y) };
+        const p1 = Vec2i{ @intCast(x), @intFromFloat(bc_y) };
+
+        draw_line(image, p0, p1, color);
+    }
 }
 
 pub fn main() !void {
