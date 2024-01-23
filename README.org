@@ -444,6 +444,7 @@ algorithm is a bit messed up.
 
 **** Fix fill triangle artifacts [2024-01-23 Tue 08:45]
      :LOGBOOK:
+     CLOCK: [2024-01-23 Tue 08:54]--[2024-01-23 Tue 09:16] =>  0:22
      CLOCK: [2024-01-23 Tue 08:45]--[2024-01-23 Tue 08:54] =>  0:09
      :END:
 
@@ -451,4 +452,17 @@ Today just wanna do a little work to try and fix the artifacts plus make a
 change I wanna do around making it orientated around scanning along the y axis
 instead of the x axis.
 
-Refactor was mostly copy pasta, artifacts slightly changed.
+Refactor was mostly copy pasta, artifacts slightly changed. Then implemented a
+more direct filling of lines (not via draw_line) and the artifacts are gone.
+
+Took a look at his code now, he uses the same approach. His calculation of x
+is a little different, I think he simplifed it out a bit more.
+
+He then goes on to another way to draw triangles which rather finds the
+bounding box then does checks if inside triangle to draw or not. I will spend
+the rest of the time reading, but don't think I will implement his version
+unless it seems useful to learn a primitive from it.
+
+Alright, so the implementation does more floating point operations per pixel.
+However, the math I have all forgotten so I think my next session will be
+pencil and paper to revise this stuff.

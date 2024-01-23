@@ -286,10 +286,14 @@ fn draw_triangle(image: *TGAImage, t0: Vec2i, t1: Vec2i, t2: Vec2i, color: TGACo
             ac_x = 0;
         }
 
-        const p0 = Vec2i{ @intFromFloat(ab_x), @intCast(y) };
-        const p1 = Vec2i{ @intFromFloat(ac_x), @intCast(y) };
-
-        draw_line(image, p0, p1, color);
+        var x_start: u32 = @intFromFloat(ab_x);
+        var x_end: u32 = @intFromFloat(ac_x);
+        if (x_end < x_start) {
+            mem.swap(u32, &x_start, &x_end);
+        }
+        for (x_start..x_end + 1) |x| {
+            image.set(Vec2i{ @intCast(x), @intCast(y) }, color);
+        }
     }
 
     for (mid_y..ordered[2][1] + 1) |y| {
@@ -304,10 +308,14 @@ fn draw_triangle(image: *TGAImage, t0: Vec2i, t1: Vec2i, t2: Vec2i, color: TGACo
             bc_x = 0;
         }
 
-        const p0 = Vec2i{ @intFromFloat(bc_x), @intCast(y) };
-        const p1 = Vec2i{ @intFromFloat(ac_x), @intCast(y) };
-
-        draw_line(image, p0, p1, color);
+        var x_start: u32 = @intFromFloat(ac_x);
+        var x_end: u32 = @intFromFloat(bc_x);
+        if (x_end < x_start) {
+            mem.swap(u32, &x_start, &x_end);
+        }
+        for (x_start..x_end + 1) |x| {
+            image.set(Vec2i{ @intCast(x), @intCast(y) }, color);
+        }
     }
 }
 
