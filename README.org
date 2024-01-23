@@ -439,3 +439,16 @@ this simple implementation which are surprising. Makes me think my draw_line
 algorithm is a bit messed up.
 
 [[./filled_triangle_take1.png]]
+
+*** 2024-01-23 Tuesday
+
+**** Fix fill triangle artifacts [2024-01-23 Tue 08:45]
+     :LOGBOOK:
+     CLOCK: [2024-01-23 Tue 08:45]--[2024-01-23 Tue 08:54] =>  0:09
+     :END:
+
+Today just wanna do a little work to try and fix the artifacts plus make a
+change I wanna do around making it orientated around scanning along the y axis
+instead of the x axis.
+
+Refactor was mostly copy pasta, artifacts slightly changed.
