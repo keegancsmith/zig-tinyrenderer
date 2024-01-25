@@ -466,3 +466,31 @@ unless it seems useful to learn a primitive from it.
 Alright, so the implementation does more floating point operations per pixel.
 However, the math I have all forgotten so I think my next session will be
 pencil and paper to revise this stuff.
+
+*** 2024-01-25 Thursday
+
+**** Reviewing linear algebra [2024-01-25 Thu 08:23]
+     :LOGBOOK:
+     CLOCK: [2024-01-25 Thu 08:23]--[2024-01-25 Thu 09:35] =>  1:12
+     :END:
+
+I never felt like I understood linear algebra in uni, it just felt like I
+learnt the rules. So gonna take the time to brush up enough to feel confident
+with the explanation of all the vector and matrix math being used.
+
+I watched (at a higher speed) the first 3 videos of [[https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab][3Blue1Brown Essence of
+linear algebra]] and the first video on vector spaces in [[https://www.khanacademy.org/math/linear-algebra][Khan Academy Linear
+Algebra]]. As I watched I paused and wrote things down, including
+re-remembering how matrix vector multiplication worked.
+
+The 3Blue1Brown video on [[https://www.youtube.com/watch?v=kYB8IZa5AuE&list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab&index=3][linear transformations]] I felt like it finally clicked
+how 2d matrices are used to transform stuff in R2. I have just blindly copy
+pasted this in opengl coding in the past. What made it click was proving
+myself why any linear transformation can be represented with a matrix (using
+things I remember about how linear transformations are defined in general on
+vector spaces). Then when he showed an example in the video deriving the
+matrix myself first. Additionally the visuals in the video helped cement.
+
+Linear algebra was my least favourite math course in my math major. I feel
+like I may now try relearn it since I was just missing that intuition which I
+just gained.
