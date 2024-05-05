@@ -494,3 +494,23 @@ matrix myself first. Additionally the visuals in the video helped cement.
 Linear algebra was my least favourite math course in my math major. I feel
 like I may now try relearn it since I was just missing that intuition which I
 just gained.
+
+** 2024-05 May
+*** 2024-05-05 Sunday
+
+**** Adopting linear algebra for triangle drawing [2024-05-05 Sun 12:42]
+
+The code he presents is really nice, plus I ran into some bugs with the
+triangle filling code I wrote when trying to render all the faces. I fixed
+some of the bugs like division by zero, but I believe there is something I am
+missing in my algorithm. Given the many months that have passed since I last
+worked on this project I am gonna take this linear algebra code as gospel and
+implement it. I'll have to come back another time to see if I can gain a
+deeper understanding of the math.
+
+It still has a bunch of artifacts. Diving into the code he actually uses he
+doesn't use the barycentric code, so I am guessing there are issues I am not
+aware of when using the code. In particular it seems that this algorithm is
+sensitive to the ordering of the points. I tried implementing counter
+clockwise sorting, and it looks mostly correct but I still worry about
+artifacts.

@@ -5,6 +5,7 @@ const mem = std.mem;
 const meta = std.meta;
 const process = std.process;
 const Allocator = mem.Allocator;
+const assert = std.debug.assert;
 
 const max_obj_file_size = 10 * 1024 * 1024;
 
@@ -24,9 +25,9 @@ const TGAHeader = packed struct {
 };
 
 const TGAColor = struct {
-    r: u8 = 0,
-    g: u8 = 0,
     b: u8 = 0,
+    g: u8 = 0,
+    r: u8 = 0,
 };
 
 const TGAImage = struct {
@@ -84,7 +85,7 @@ const TGAImage = struct {
         _ = try bw.write(std.mem.asBytes(&header));
 
         for (self.data) |pixel| {
-            const bytes = [_]u8{ pixel.r, pixel.g, pixel.b };
+            const bytes = [_]u8{ pixel.b, pixel.g, pixel.r };
             _ = try bw.write(bytes[0..]);
         }
 
@@ -242,79 +243,63 @@ const Model = struct {
 
 const Vec2i = [2]u32;
 
-fn draw_triangle(image: *TGAImage, t0: Vec2i, t1: Vec2i, t2: Vec2i, color: TGAColor) void {
-    // order the points by y
-    var ordered = [_]Vec2i{ t0, t1, t2 };
-    if (ordered[0][1] > ordered[1][1]) {
-        mem.swap(Vec2i, &ordered[0], &ordered[1]);
+fn find_bounding_box(points: [3]Vec2i) [2]Vec2i {
+    var bounding_box = [2]Vec2i{ points[0], points[0] };
+    for (points[1..]) |p| {
+        bounding_box[0][0] = @min(bounding_box[0][0], p[0]);
+        bounding_box[0][1] = @min(bounding_box[0][1], p[1]);
+        bounding_box[1][0] = @max(bounding_box[1][0], p[0]);
+        bounding_box[1][1] = @max(bounding_box[1][1], p[1]);
     }
-    if (ordered[0][1] > ordered[2][1]) {
-        mem.swap(Vec2i, &ordered[0], &ordered[2]);
+    return bounding_box;
+}
+
+fn inside(points: [3]Vec2i, p: Vec2i) bool {
+    assert(p[0] >= 0 and p[0] <= 800);
+    assert(p[1] >= 0 and p[1] <= 800);
+
+    const a1: f32 = @as(f32, @floatFromInt(points[2][0])) - @as(f32, @floatFromInt(points[0][0]));
+    const a2: f32 = @as(f32, @floatFromInt(points[1][0])) - @as(f32, @floatFromInt(points[0][0]));
+    const a3: f32 = @as(f32, @floatFromInt(points[0][0])) - @as(f32, @floatFromInt(p[0]));
+
+    const b1: f32 = @as(f32, @floatFromInt(points[2][1])) - @as(f32, @floatFromInt(points[0][1]));
+    const b2: f32 = @as(f32, @floatFromInt(points[1][1])) - @as(f32, @floatFromInt(points[0][1]));
+    const b3: f32 = @as(f32, @floatFromInt(points[0][1])) - @as(f32, @floatFromInt(p[1]));
+
+    // a cross b
+    const c1 = a2 * b3 - a3 * b2;
+    const c2 = a3 * b1 - a1 * b3;
+    const c3 = a1 * b2 - a2 * b1;
+
+    // degenerate triangle case
+    if (@abs(c3) < 1) return false;
+
+    return ((c1 + c2) / c3 <= 1) and (c2 >= 0) and (c1 >= 0);
+}
+
+fn draw_triangle(image: *TGAImage, points2: [3]Vec2i, color: TGAColor) void {
+    // not shown in psuedocode, but depends on the points being in counter
+    // clockwise order.
+    var points = points2;
+    if (points[0][1] > points[1][1]) {
+        mem.swap(Vec2i, &points[0], &points[1]);
     }
-    if (ordered[1][1] > ordered[2][1]) {
-        mem.swap(Vec2i, &ordered[1], &ordered[2]);
+    if (points[0][1] > points[2][1]) {
+        mem.swap(Vec2i, &points[0], &points[2]);
     }
-
-    const a_x: f32 = @floatFromInt(ordered[0][0]);
-    const a_y: f32 = @floatFromInt(ordered[0][1]);
-    const b_x: f32 = @floatFromInt(ordered[1][0]);
-    const b_y: f32 = @floatFromInt(ordered[1][1]);
-    const c_x: f32 = @floatFromInt(ordered[2][0]);
-    const c_y: f32 = @floatFromInt(ordered[2][1]);
-
-    const ab_slope = if (a_x != b_x) ((b_y - a_y) / (b_x - a_x)) else 0;
-    const ac_slope = if (a_x != c_x) ((c_y - a_y) / (c_x - a_x)) else 0;
-    const bc_slope = if (b_x != c_x) ((c_y - b_y) / (c_x - b_x)) else 0;
-
-    const ab_C = a_y - ab_slope * a_x;
-    const ac_C = a_y - ac_slope * a_x;
-    const bc_C = b_y - bc_slope * b_x;
-
-    // mid_y is the y value where we stop drawing AB and start drawing BC. If
-    // a_y == b_y then we skip AB since BC will cover it.
-    const mid_y = if (ordered[0][1] == ordered[1][1]) ordered[1][1] else (ordered[1][1] + 1);
-
-    for (ordered[0][1]..mid_y) |y| {
-        const yf: f32 = @floatFromInt(y);
-        var ab_x = (yf - ab_C) / ab_slope;
-        var ac_x = (yf - ac_C) / ac_slope;
-
-        if (ab_x < 0) {
-            ab_x = 0;
-        }
-        if (ac_x < 0) {
-            ac_x = 0;
-        }
-
-        var x_start: u32 = @intFromFloat(ab_x);
-        var x_end: u32 = @intFromFloat(ac_x);
-        if (x_end < x_start) {
-            mem.swap(u32, &x_start, &x_end);
-        }
-        for (x_start..x_end + 1) |x| {
-            image.set(Vec2i{ @intCast(x), @intCast(y) }, color);
-        }
+    if (points[1][0] > points[2][0]) {
+        mem.swap(Vec2i, &points[1], &points[2]);
     }
 
-    for (mid_y..ordered[2][1] + 1) |y| {
-        const yf: f32 = @floatFromInt(y);
-        var ac_x = (yf - ac_C) / ac_slope;
-        var bc_x = (yf - bc_C) / bc_slope;
-
-        if (ac_x < 0) {
-            ac_x = 0;
-        }
-        if (bc_x < 0) {
-            bc_x = 0;
-        }
-
-        var x_start: u32 = @intFromFloat(ac_x);
-        var x_end: u32 = @intFromFloat(bc_x);
-        if (x_end < x_start) {
-            mem.swap(u32, &x_start, &x_end);
-        }
-        for (x_start..x_end + 1) |x| {
-            image.set(Vec2i{ @intCast(x), @intCast(y) }, color);
+    const bounding_box = find_bounding_box(points);
+    assert(bounding_box[0][0] >= 0 and bounding_box[0][1] >= 0);
+    assert(bounding_box[1][0] <= 800 and bounding_box[1][1] <= 800);
+    for (bounding_box[0][1]..bounding_box[1][1] + 1) |y| {
+        for (bounding_box[0][0]..bounding_box[1][0] + 1) |x| {
+            const p = Vec2i{ @as(u32, @intCast(x)), @as(u32, @intCast(y)) };
+            if (inside(points, p)) {
+                image.set(p, color);
+            }
         }
     }
 }
@@ -335,11 +320,16 @@ pub fn main() !void {
     var model = try Model.readFile(allocator, model_path);
     defer model.deinit();
 
-    const white = TGAColor{ .r = 255, .g = 255, .b = 255 };
-    const red = TGAColor{ .r = 255 };
-    const green = TGAColor{ .g = 255 };
     const width = 800;
     const height = 800;
+
+    // neat, labelled blocks allow you to return a value
+    var prng = std.rand.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        try std.os.getrandom(std.mem.asBytes(&seed));
+        break :blk seed;
+    });
+    const rand = prng.random();
 
     var data = [_]TGAColor{.{}} ** (width * height);
     var image = TGAImage{
@@ -348,27 +338,24 @@ pub fn main() !void {
     };
 
     for (model.faces.items) |vertex_indices| {
-        for (0..3) |i| {
-            const v0 = model.vertices.items[vertex_indices[i]];
-            const v1 = model.vertices.items[vertex_indices[(i + 1) % 3]];
-            const t0 = Vec2i{
-                @intFromFloat((v0[0] + 1) * width / 2),
-                @intFromFloat((v0[1] + 1) * height / 2),
-            };
-            const t1 = Vec2i{
-                @intFromFloat((v1[0] + 1) * width / 2),
-                @intFromFloat((v1[1] + 1) * height / 2),
-            };
-            draw_line(&image, t0, t1, white);
-        }
+        const v0 = model.vertices.items[vertex_indices[0]];
+        const v1 = model.vertices.items[vertex_indices[1]];
+        const v2 = model.vertices.items[vertex_indices[2]];
+        const t0 = Vec2i{
+            @intFromFloat((v0[0] + 1) * width / 2),
+            @intFromFloat((v0[1] + 1) * height / 2),
+        };
+        const t1 = Vec2i{
+            @intFromFloat((v1[0] + 1) * width / 2),
+            @intFromFloat((v1[1] + 1) * height / 2),
+        };
+        const t2 = Vec2i{
+            @intFromFloat((v2[0] + 1) * width / 2),
+            @intFromFloat((v2[1] + 1) * height / 2),
+        };
+        const c = TGAColor{ .r = rand.int(u8), .g = rand.int(u8), .b = rand.int(u8) };
+        draw_triangle(&image, .{ t0, t1, t2 }, c);
     }
-
-    const t0 = [_]Vec2i{ .{ 10, 70 }, .{ 50, 160 }, .{ 70, 80 } };
-    const t1 = [_]Vec2i{ .{ 180, 50 }, .{ 150, 1 }, .{ 70, 180 } };
-    const t2 = [_]Vec2i{ .{ 180, 150 }, .{ 120, 160 }, .{ 130, 180 } };
-    draw_triangle(&image, t0[0], t0[1], t0[2], red);
-    draw_triangle(&image, t1[0], t1[1], t1[2], white);
-    draw_triangle(&image, t2[0], t2[1], t2[2], green);
 
     image.flip_vertically();
     try image.write_tga_file("output.tga");
